@@ -1,0 +1,24 @@
+split_options:
+  test_size: 0.2
+  random_state: 3
+xgboost_params_full_feats:
+  max_depth: 6
+  gamma: 0.01
+  scale_pos_weight: 10
+  validation_split: 0.3
+  random_state: 3
+  early_stopping_rounds: 10
+  verbose: 1
+
+rr_params_full_feats:
+  max_depth: 10
+  min_samples_split: 100
+  class_weight: "balanced_subsample"
+  ccp_alpha: 0.1
+  verbose: 1
+
+logres_params_full_feats:
+  C : 0.01
+  class_weight: "balanced"
+  solver: "saga"
+  verbose: 1
