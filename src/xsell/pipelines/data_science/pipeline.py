@@ -5,82 +5,93 @@ Delete this when you start working on your own Kedro project.
 """
 
 from kedro.pipeline import node, pipeline
-from .nodes import split_data, fit_logres, fit_rr, fit_xgboost, evaluate_model
+from .nodes import split_data, fit_logres, fit_rr, fit_xgboost, evaluate_model, plot_roc
 
 
-def create_pipeline(**kwargs):
-    split_node = node(
+def create_plot_roc_node():
+    return node(
+        func=plot_roc,
+        inputs=["clf", "X_test", "y_test"],
+        outputs="roc_graph",
+        name="plot_roc",
+    )
+
+def create_split_node():
+    return node(
         func=split_data,
         inputs=["model_input_table", "params:split_options"],
         outputs=["X_train", "X_test", "y_train", "y_test"],
         name="split_data_node",
     )
 
-    evaluate_node = node(
-        func=evaluate_model,
-        inputs=["clf", "X_test", "y_test"],
-        outputs=None,
-        name="evaluate_model_node",
-    )
+def create_xgb_pipeline(**kwargs):
+    split_node = create_split_node()
+    plot_node = create_plot_roc_node()
 
     xgb_pipe_instance = pipeline(
         [
             split_node,
             node(
                 func=fit_xgboost,
-                inputs=["X_train", "y_train", "params:xgboost_params_full_feats"],
-                outputs="clf",
+                inputs=["X_train", "y_train", "X_test", "y_test",
+                        "params:xgboost_params_full_feats"],
+                outputs={"clf" : "clf", "model_metrics" : "model_metrics"},
                 name="train_xgboost",
             ),
-            evaluate_node
+            plot_node
         ],
     )
-    xgb_pipe = pipeline(
+
+    return pipeline(
         pipe=xgb_pipe_instance,
         inputs="model_input_table",
         namespace="xgboost_pipe",
         parameters={"params:xgboost_params_full_feats"})
+
+def create_rr_pipeline(**kwargs):
+    split_node = create_split_node()
+    plot_node = create_plot_roc_node()
 
     rr_pipe_instance = pipeline(
         [
             split_node,
             node(
                 func=fit_rr,
-                inputs=["X_train", "y_train", "params:rr_params_full_feats"],
-                outputs="clf",
+                inputs=["X_train", "y_train", "X_test",
+                        "y_test", "params:rr_params_full_feats"],
+                outputs={"clf" : "clf", "model_metrics" : "model_metrics"},
                 name="train_rr",
             ),
-            evaluate_node
+            plot_node
         ]
     )
 
-    rr_pipe = pipeline(
+    return pipeline(
         pipe=rr_pipe_instance,
         inputs="model_input_table",
         namespace="rr_pipe",
         parameters={"params:rr_params_full_feats"})
 
-    logres_pipe = pipeline(
+def create_logres_pipeline(**kwargs):
+    split_node = create_split_node()
+    plot_node = create_plot_roc_node()
+
+    logres_pipe_instance = pipeline(
         [
             split_node,
             node(
                 func=fit_logres,
-                inputs=["X_train", "y_train", "params:logres_params_full_feats"],
-                outputs="clf",
+                inputs=["X_train", "y_train", "X_test",
+                        "y_test", "params:logres_params_full_feats"],
+                outputs={"clf" : "clf", "model_metrics" : "model_metrics"},
                 name="train_logres",
             ),
-            evaluate_node
+            plot_node
         ]
     )
 
-    logres_pipe = pipeline(
-        pipe=logres_pipe,
+    return pipeline(
+        pipe=logres_pipe_instance,
         inputs="model_input_table",
         namespace="logres_pipe",
         parameters={"params:logres_params_full_feats"})
-
-    return pipeline(
-        pipe=logres_pipe + rr_pipe + xgb_pipe,
-        inputs="model_input_table",
-        namespace="data_science",
-    )

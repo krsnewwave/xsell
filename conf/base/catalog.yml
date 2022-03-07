@@ -52,20 +52,69 @@ model_input_table:
   filepath: data/03_primary/model_input_table.pq
   layer: primary
 
-data_science.xgboost_pipe.clf:
-  type: pickle.PickleDataSet
-  filepath: data/06_models/xgboost_clf.pickle
-  versioned: true
-  layer: models
+xgboost_pipe.clf:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+  data_set:
+    type: kedro_mlflow.io.models.MlflowModelSaverDataSet
+    flavor: mlflow.sklearn
+    filepath: data/06_models/xgboost_clf.pickle
 
-data_science.rr_pipe.clf:
-  type: pickle.PickleDataSet
-  filepath: data/06_models/rr_clf.pickle
-  versioned: true
-  layer: models
+xgboost_pipe.model_metrics:
+  type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
+  prefix: metrics
 
-data_science.logres_pipe.clf:
-  type: pickle.PickleDataSet
-  filepath: data/06_models/logres_clf.pickle
-  versioned: true
-  layer: models
+
+xgboost_pipe.roc_graph:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+  data_set:
+    type: kedro.extras.datasets.matplotlib.MatplotlibWriter
+    filepath: data/06_models/xgb.roc_plot.png
+
+rr_pipe.clf:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+  data_set:
+    type: kedro_mlflow.io.models.MlflowModelSaverDataSet
+    flavor: mlflow.sklearn
+    filepath: data/06_models/rr_clf.pickle
+
+rr_pipe.model_metrics:
+  type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
+  prefix: metrics
+
+rr_pipe.roc_graph:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+  data_set:
+    type: kedro.extras.datasets.matplotlib.MatplotlibWriter
+    filepath: data/06_models/rr.roc_plot.png
+
+logres_pipe.clf:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+  data_set:
+    type: kedro_mlflow.io.models.MlflowModelSaverDataSet
+    flavor: mlflow.sklearn
+    filepath: data/06_models/logres_clf.pickle
+
+logres_pipe.model_metrics:
+  type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
+  prefix: metrics
+
+logres_pipe.roc_graph:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+  data_set:
+    type: kedro.extras.datasets.matplotlib.MatplotlibWriter
+    filepath: data/06_models/logres.roc_plot.png
+
+# data_science.xgboost_pipe.model_metrics:
+#   type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
+
+# data_science.rr_pipe.model_metrics:
+#   type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
+
+# data_science.logres_pipe.model_metrics:
+#   type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
+
+# data_science.plot_roc.roc_graph:
+#   type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+#   data_set:
+#     type: kedro.extras.datasets.matplotlib.MatplotlibWriter
+#     filepath: data/06_models/roc_plot.png

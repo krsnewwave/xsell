@@ -420,3 +420,4 @@ zipp==3.7.0
 ## additionals
 scikit-learn==1.0.2
 xgboost==1.5.2
+matplotlib

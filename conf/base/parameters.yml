@@ -11,7 +11,7 @@ xgboost_params_full_feats:
   verbose: 1
 
 rr_params_full_feats:
-  max_depth: 10
+  max_depth: 20
   min_samples_split: 100
   class_weight: "balanced_subsample"
   ccp_alpha: 0.1

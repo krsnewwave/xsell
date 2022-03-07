@@ -15,10 +15,14 @@ def register_pipelines() -> Dict[str, Pipeline]:
 
     """
     data_engineering_pipeline = de.create_pipeline()
-    data_science_pipeline = ds.create_pipeline()
+    xgb_pipe = ds.create_xgb_pipeline()
+    rr_pipe = ds.create_rr_pipeline()
+    logres_pipe = ds.create_logres_pipeline()
 
     return {
         "de": data_engineering_pipeline,
-        "ds": data_science_pipeline,
-        "__default__": data_engineering_pipeline + data_science_pipeline,
+        "xgb_pipe": xgb_pipe,
+        "rr_pipe": rr_pipe,
+        "logres_pipe": logres_pipe,
+        "__default__": data_engineering_pipeline + xgb_pipe + rr_pipe + logres_pipe,
     }

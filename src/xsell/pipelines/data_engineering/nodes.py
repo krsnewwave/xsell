@@ -60,5 +60,7 @@ def preprocess(df: pd.DataFrame) -> pd.DataFrame:
         logger.info(df.isnull().sum().sort_values()[::-1])
         raise ValueError("Has nulls")
     else:
+        # comment this so you'll have a faster processing time
+        df = df.sample(20_000, random_state=123)
         return df
     
