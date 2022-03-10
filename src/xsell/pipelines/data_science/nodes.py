@@ -22,6 +22,8 @@ from sklearn.metrics import plot_roc_curve
 from matplotlib import pyplot as plt
 from kedro_mlflow.io.metrics import MlflowMetricDataSet
 import mlflow
+import optuna
+from functools import partial
 
 
 def split_data(data: pd.DataFrame, parameters: Dict) -> Tuple:
@@ -42,7 +44,7 @@ def split_data(data: pd.DataFrame, parameters: Dict) -> Tuple:
 
 
 def fit_xgboost(X_train: pd.DataFrame, y_train: pd.Series,
-                X_test: pd.DataFrame, y_test: pd.Series, params: Dict) -> XGBClassifier:
+                X_test: pd.DataFrame, y_test: pd.Series, params: Dict) -> Dict:
     # establish early stopping validation set
     validation_split = params.pop("validation_split")
     random_state = params.pop("random_state")
@@ -64,9 +66,41 @@ def fit_xgboost(X_train: pd.DataFrame, y_train: pd.Series,
     return {"clf": xgb_clf, "model_metrics": dict_metrics}
 
 
-def fit_rr(X_train: pd.DataFrame, y_train: pd.Series,
-           X_test: pd.DataFrame, y_test: pd.Series, params: Dict) -> RandomForestClassifier:
+def rr_objective(X_train: pd.DataFrame, y_train: pd.Series,
+              X_test: pd.DataFrame, y_test: pd.Series,
+              trial: optuna.trial):
+    max_depth = trial.suggest_int("max_depth", 8, 64, log=True)
+    min_samples_split = trial.suggest_int("min_samples_split", 50, 1000, )
+    ccp_alpha = trial.suggest_float("ccp_alpha", 0.001, 0.03, log=True)
+    rr_clf = RandomForestClassifier(max_depth=max_depth,
+                                    min_samples_split=min_samples_split,
+                                    ccp_alpha=ccp_alpha,
+                                    class_weight='balanced_subsample',
+                                    verbose=1)
+    rr_clf.fit(X_train, y_train)
+    y_proba = rr_clf.predict_proba(X_test)[:, 1]
+    ap = average_precision_score(y_test, y_proba)
+    return ap
 
+
+def fit_rr_ho(X_train: pd.DataFrame, y_train: pd.Series,
+              X_test: pd.DataFrame, y_test: pd.Series):
+    study = optuna.create_study(direction="maximize")
+    fun_rr_object = partial(rr_objective, X_train, y_train, X_test, y_test)
+    # increase n_trials > 100 for better success
+    study.optimize(fun_rr_object, n_trials=5)
+    best_params = study.best_params
+
+    mlflow.log_params(best_params)
+
+    rr_clf = RandomForestClassifier(**best_params)
+    rr_clf.fit(X_train, y_train)
+    dict_metrics = evaluate_model(rr_clf, X_test, y_test)
+    return {"clf": rr_clf, "model_metrics": dict_metrics}
+
+
+def fit_rr(X_train: pd.DataFrame, y_train: pd.Series,
+           X_test: pd.DataFrame, y_test: pd.Series, params: Dict) -> Dict:
     rr_clf = RandomForestClassifier(**params)
     rr_clf.fit(X_train, y_train)
     dict_metrics = evaluate_model(rr_clf, X_test, y_test)
@@ -74,7 +108,7 @@ def fit_rr(X_train: pd.DataFrame, y_train: pd.Series,
 
 
 def fit_logres(X_train: pd.DataFrame, y_train: pd.Series,
-               X_test: pd.DataFrame, y_test: pd.Series, params: Dict) -> LogisticRegression:
+               X_test: pd.DataFrame, y_test: pd.Series, params: Dict) -> Dict:
 
     # scale first
     ss = StandardScaler()
@@ -87,12 +121,12 @@ def fit_logres(X_train: pd.DataFrame, y_train: pd.Series,
 
 
 def evaluate_model(clf: BaseEstimator, X_test: pd.DataFrame, y_test: pd.Series):
-    """Calculates and logs the coefficient of determination.
+    """Calculates metrics.
 
     Args:
-        regressor: Trained model.
-        X_test: Testing data of independent features.
-        y_test: Testing data for price.
+        clf: Trained model.
+        X_test: Test X.
+        y_test: Test y.
     """
     y_proba = clf.predict_proba(X_test)[:, 1]
     y_preds = y_proba > 0.5

@@ -63,7 +63,6 @@ xgboost_pipe.model_metrics:
   type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
   prefix: metrics
 
-
 xgboost_pipe.roc_graph:
   type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
   data_set:
@@ -87,6 +86,23 @@ rr_pipe.roc_graph:
     type: kedro.extras.datasets.matplotlib.MatplotlibWriter
     filepath: data/06_models/rr.roc_plot.png
 
+rr_pipe_hyperparams.clf:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+  data_set:
+    type: kedro_mlflow.io.models.MlflowModelSaverDataSet
+    flavor: mlflow.sklearn
+    filepath: data/06_models/rr_clf.pickle
+
+rr_pipe_hyperparams.model_metrics:
+  type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
+  prefix: metrics
+
+rr_pipe_hyperparams.roc_graph:
+  type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
+  data_set:
+    type: kedro.extras.datasets.matplotlib.MatplotlibWriter
+    filepath: data/06_models/rr_hyperparams.roc_plot.png
+
 logres_pipe.clf:
   type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
   data_set:
@@ -103,18 +119,3 @@ logres_pipe.roc_graph:
   data_set:
     type: kedro.extras.datasets.matplotlib.MatplotlibWriter
     filepath: data/06_models/logres.roc_plot.png
-
-# data_science.xgboost_pipe.model_metrics:
-#   type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
-
-# data_science.rr_pipe.model_metrics:
-#   type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
-
-# data_science.logres_pipe.model_metrics:
-#   type: kedro_mlflow.io.metrics.MlflowMetricsDataSet
-
-# data_science.plot_roc.roc_graph:
-#   type: kedro_mlflow.io.artifacts.MlflowArtifactDataSet
-#   data_set:
-#     type: kedro.extras.datasets.matplotlib.MatplotlibWriter
-#     filepath: data/06_models/roc_plot.png
